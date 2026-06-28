@@ -1,0 +1,23 @@
+{
+  "dc_circuit": {
+    "nodes": ["gnd", "a"],
+    "components": [
+      {
+        "id": "E1",
+        "type": "voltage_source",
+        "voltage_v": 12,
+        "from": "gnd",
+        "to": "a"
+      },
+      {
+        "id": "R1",
+        "type": "resistor",
+        "resistance_ohm": 12,
+        "from": "a",
+        "to": "gnd",
+        "rated_current_a": 1
+      }
+    ],
+    "ref_node": "gnd"
+  }
+}

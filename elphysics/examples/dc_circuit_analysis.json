@@ -1,0 +1,40 @@
+{
+  "dc_circuit": {
+    "id": "dc_unknown_emf",
+    "description": "未知起電力 E1 の逆算 (analysis モード)。R2 の両端電圧が 4V になる E1 を求める。",
+    "question": "直列分圧回路で R2 (3Ω) の電圧降下が 4V のとき、電源 E1 は何 V か。",
+    "nodes": ["gnd", "a", "b"],
+    "components": [
+      {
+        "id": "E1",
+        "type": "voltage_source",
+        "voltage_v": null,
+        "from": "gnd",
+        "to": "a"
+      },
+      {
+        "id": "R1",
+        "type": "resistor",
+        "resistance_ohm": 6,
+        "from": "a",
+        "to": "b"
+      },
+      {
+        "id": "R2",
+        "type": "resistor",
+        "resistance_ohm": 3,
+        "from": "b",
+        "to": "gnd"
+      }
+    ],
+    "ref_node": "gnd",
+    "constraints": [
+      {
+        "type": "voltage_across",
+        "component_id": "R2",
+        "voltage_v": 4
+      }
+    ],
+    "find": ["E1"]
+  }
+}

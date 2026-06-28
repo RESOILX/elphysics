@@ -1,0 +1,76 @@
+{
+  "dc_circuit": {
+    "id": "dc_ladder_bridge",
+    "description": "はしご型ブリッジ抵抗ネットワーク (合成抵抗の検証用サンプル)",
+    "nodes": [
+      "a",
+      "T1",
+      "T2",
+      "B1",
+      "B2",
+      "b"
+    ],
+    "components": [
+      {
+        "id": "R1",
+        "type": "resistor",
+        "resistance_ohm": 3,
+        "from": "a",
+        "to": "T1"
+      },
+      {
+        "id": "R2",
+        "type": "resistor",
+        "resistance_ohm": 1,
+        "from": "T1",
+        "to": "T2"
+      },
+      {
+        "id": "R3",
+        "type": "resistor",
+        "resistance_ohm": 3,
+        "from": "T2",
+        "to": "b"
+      },
+      {
+        "id": "R4",
+        "type": "resistor",
+        "resistance_ohm": 3,
+        "from": "a",
+        "to": "B1"
+      },
+      {
+        "id": "R5",
+        "type": "resistor",
+        "resistance_ohm": 1,
+        "from": "B1",
+        "to": "B2"
+      },
+      {
+        "id": "R6",
+        "type": "resistor",
+        "resistance_ohm": 3,
+        "from": "B2",
+        "to": "b"
+      },
+      {
+        "id": "R7",
+        "type": "resistor",
+        "resistance_ohm": 3,
+        "from": "T1",
+        "to": "B1"
+      },
+      {
+        "id": "R8",
+        "type": "resistor",
+        "resistance_ohm": 3,
+        "from": "T2",
+        "to": "B2"
+      }
+    ],
+    "terminals": {
+      "pos": "a",
+      "neg": "b"
+    }
+  }
+}

@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "elphysics"
+version = "0.1.0"
+description = "直流回路の形式検証エンジン (キルヒホッフ・オームの法則を Z3 SMT で検証)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Haruto Sasaki (ResoilX)" },
+]
+keywords = ["electrical", "circuit", "dc", "verification", "z3", "smt", "formal-verification"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+# 実行に必須の依存 (検証エンジン本体)
+dependencies = [
+    "z3-solver>=4.12",   # DC 回路の形式証明 (キルヒホッフ・オームの法則)
+    "jsonschema>=4.0",   # 入力回路 JSON の構造検証 (schema/circuit.schema.json)
+]
+
+[project.optional-dependencies]
+# Web API (検証エンジンのサービス化) を使う場合
+api = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+]
+# 開発・テスト
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+]
+
+[project.urls]
+Homepage = "https://github.com/RESOILX/elphysics"
+Repository = "https://github.com/RESOILX/elphysics"
+
+# CLI: `elphysics-verify path/to/dc_circuit.json` で検証できる
+[project.scripts]
+elphysics-verify = "elphysics.unified_verifier:cli_main"
+
+[tool.setuptools.packages.find]
+include = ["elphysics*"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+# サンプル回路 JSON と入力スキーマをパッケージに同梱する
+elphysics = ["examples/*.json", "schema/*.json"]
