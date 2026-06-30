@@ -112,7 +112,7 @@ def verify(
     circuit_type = detect_circuit_type(circuit)
 
     if circuit_type == "unknown":
-        return circuit_type, [ValidationResult(
+        return [ValidationResult(
             rule="unified_verifier",
             target="circuit",
             status="error",
@@ -155,7 +155,7 @@ def verify(
             ))
             continue
 
-    return circuit_type, all_results
+    return all_results
 
 
 # ── サマリー集計 ──────────────────────────────────────────────────────
@@ -202,8 +202,8 @@ def verify_file(path: str | Path) -> tuple[str, list[ValidationResult]]:
             reason="invalid_json",
         )]
 
-    return verify(circuit)
-
+    circuit_type = detect_circuit_type(circuit)
+    return circuit_type, verify(circuit)
 
 # ── CLI エントリポイント ──────────────────────────────────────────────
 
