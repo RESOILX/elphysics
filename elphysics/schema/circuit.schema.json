@@ -32,7 +32,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "from", "to"],
+            "required": ["id", "type", "from", "to"],
             "properties": {
               "id": { "type": "string" },
               "type": { "type": "string", "enum": ["resistor", "wire", "voltage_source"] },
@@ -41,7 +41,19 @@
               "rated_current_a": { "type": "number" },
               "from": { "type": "string" },
               "to": { "type": "string" }
-            }
+            },
+            "allOf": [
+              {
+                "comment": "抵抗は resistance_ohm 必須",
+                "if": { "properties": { "type": { "const": "resistor" } } },
+                "then": { "required": ["resistance_ohm"] }
+              },
+              {
+                "comment": "電圧源は voltage_v 必須 (未知電源は null を明示)",
+                "if": { "properties": { "type": { "const": "voltage_source" } } },
+                "then": { "required": ["voltage_v"] }
+              }
+            ]
           }
         },
         "terminals": {
