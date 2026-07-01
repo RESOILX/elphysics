@@ -203,6 +203,59 @@ curl -X POST http://127.0.0.1:8000/verify \
 
 ---
 
+## AI データセット生成
+
+elphysics は **Z3 SMT による形式証明**を利用して、物理的に正確な QA データセットを自動生成できます。
+LLM の生成と異なり、答えが数学的に保証されているため、ファインチューニングや評価ベンチマークの教師データとして利用できます。
+
+### Type 1: 合成抵抗計算 QA
+
+`elphysics/examples/qa_generator_type1.py` を使うと、直列・並列・混合回路の合成抵抗を問う QA ペアを生成できます。
+
+```bash
+# 100 件生成（デフォルト）
+python elphysics/examples/qa_generator_type1.py
+
+# 件数・出力先を指定
+python elphysics/examples/qa_generator_type1.py --count 1000 --output dataset.jsonl
+```
+
+生成される JSONL の各レコード:
+
+```json
+{
+  "id": "dc_r_mixed_ps_0001",
+  "type": "mixed_ps",
+  "difficulty": "medium",
+  "question": "R1=6Ω、R2=12Ωの並列回路に直列にR3=4Ωを接続しました。合成抵抗を求めてください。",
+  "answer": "合成抵抗は 8 Ω です。",
+  "reasoning": "① 並列部分: 1/R_並 = 1/6 + 1/12 = 1/4 → R_並 = 4 Ω\n② 直列合計: R = 4 + 4 = 8 [Ω]",
+  "circuit": { "dc_circuit": { "..." } },
+  "r_ab_exact": "8",
+  "r_ab_float": 8.0,
+  "verified_by": "elphysics/z3-smt"
+}
+```
+
+| フィールド | 説明 |
+|-----------|------|
+| `type` | `series` / `parallel` / `mixed_ps` / `mixed_sp` / `mixed_pp` |
+| `difficulty` | `easy`（2素子）/ `medium`（3素子）/ `hard`（4素子） |
+| `question` | 自然言語の問題文（4種テンプレートからランダム選択） |
+| `answer` | 証明済みの答え（分数・近似値付き） |
+| `reasoning` | Chain-of-Thought 形式の推論ステップ |
+| `circuit` | 検証に使った回路 JSON（elphysics で再検証可能） |
+| `verified_by` | `elphysics/z3-smt`（Z3 SMT ソルバーで証明済みを示す） |
+
+```
+生成例（--count 100 のデフォルト）:
+  series    : 40 件（easy 20 / medium 20）
+  parallel  : 40 件（easy 20 / medium 20）
+  mixed_*   : 20 件（medium 12 / hard 8）
+```
+
+---
+
 ## パッケージ構成
 
 ```
