@@ -44,3 +44,7 @@ node_modules/
 # memo/video
 command.md
 *.mp4
+
+# Claude Code
+CLAUDE.md
+.claude/
