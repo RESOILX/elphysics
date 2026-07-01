@@ -254,6 +254,89 @@ python elphysics/examples/qa_generator_type1.py --count 1000 --output dataset.js
   mixed_*   : 20 件（medium 12 / hard 8）
 ```
 
+### Type 2: 電源解析（逆問題）QA
+
+`elphysics/examples/qa_generator_type2.py` は、Type 1 の**逆問題**を生成します。
+「ある抵抗の両端電圧が分かっているとき、未知の電源電圧 E を求めよ」という問題で、
+elphysics の analysis モード（`solve_dc_analysis` + `find`）が Z3 で E を逆算します。
+
+```bash
+python elphysics/examples/qa_generator_type2.py --count 500 --output type2.jsonl
+```
+
+```json
+{
+  "id": "dc_e_divider3_0001",
+  "type": "divider3",
+  "difficulty": "medium",
+  "question": "R1=15Ω、R2=5Ω、R3=10Ω を直列に接続し、電源電圧 E[V] を加えたところ、末端の R3 の両端電圧が 10 V でした。電源電圧 E を求めてください。",
+  "answer": "電源電圧は 30 V です。",
+  "reasoning": "① 末端抵抗 R3=10Ω の電流: I = V/R3 = 10/10 = 1 A\n② 直列なので全体に同じ電流。合成抵抗 ΣR = 15 + 5 + 10 = 30 Ω\n③ 電源電圧: E = I × ΣR = 1 × 30 = 30 [V]",
+  "circuit": { "dc_circuit": { "..." } },
+  "e_exact": "30",
+  "e_float": 30.0,
+  "verified_by": "elphysics/z3-smt"
+}
+```
+
+順問題（Type 1）と逆問題（Type 2）を混ぜることで、双方向の推論を学習させるデータセットになります。
+
+---
+
+## 強化学習への応用
+
+`elphysics/examples/rl_circuit_repair.py` は、**過電流を起こした回路を修復する**最小の強化学習環境です。
+報酬が `elphysics.verify()` の**形式的判定**から与えられるため、報酬をごまかす（reward hacking）ことが原理的にできません
+（＝ **検証可能報酬による強化学習 / RLVR**）。
+
+```bash
+python elphysics/examples/rl_circuit_repair.py --episodes 300
+```
+
+| 要素 | 内容 |
+|------|------|
+| 状態 | 現在の抵抗値 |
+| 行動 | 抵抗を下げる / 据え置き / 上げる |
+| 報酬 | `verify()` の結果（過電流なら罰、解消で報酬。過剰に上げないほど高得点） |
+| 終了 | 過電流が解消したとき |
+
+素の Python による表形式 Q 学習が、電源 10V・定格 1A の回路で「最小の安全抵抗 = 10Ω」を学習します。
+注目点として、elphysics が返す `suggested_patch`（修正提案）が**エキスパートの模範解答**になり、
+学習した方策と一致することを確認できます。
+
+```
+初期状態: Rt = 2Ω → I = 5.0A（過電流 5倍）
+学習後の貪欲方策: 2Ω → 4Ω → 6Ω → 8Ω → 10Ω
+suggested_patch（模範解答）: Rt → 10.0Ω  → 一致
+```
+
+---
+
+## 進化的アルゴリズムへの応用
+
+`elphysics/examples/ea_circuit_design.py` は、**合成抵抗が目標値になる回路を遺伝的アルゴリズムで設計**します。
+適応度が `solve_dc()` の**厳密解（`Fraction`）**から計算されるため、浮動小数ノイズがなく再現性のある進化が回ります。
+
+```bash
+python elphysics/examples/ea_circuit_design.py --generations 40 --pop 60
+```
+
+| 要素 | 内容 |
+|------|------|
+| 遺伝子 | トポロジー（直列/並列/混合）+ 抵抗値（最大 5 素子） |
+| 適応度 | `-|R_ab − 目標|`（厳密。完全一致で 0） |
+| ハード制約 | Z3 が SAT（実行可能）でない個体は淘汰 |
+
+elphysics が「**適応度 + 実行可能性オラクル**」として機能します。
+
+```
+目標: R_ab = 23/2 Ω (11.5000 Ω)
+  世代  1  最良 R_ab = 54/5 Ω    誤差 0.7000
+  世代  4  最良 R_ab = 196/17 Ω  誤差 0.0294
+  世代 14  最良 R_ab = 23/2 Ω    ★ 厳密一致
+発見した回路: 10Ω 直列 (2Ω ∥ 6Ω)   elphysics 検証: PASS
+```
+
 ---
 
 ## パッケージ構成
@@ -263,12 +346,17 @@ elphysics/
  ├─ __init__.py          公開 API (verify, verify_file, validate_circuit, solve_dc*, ValidationResult ほか)
  ├─ unified_verifier.py  回路型を判別し対応ルールを実行する統合検証器
  ├─ dc_solver.py         直流回路ソルバー (Z3 形式証明)
+ ├─ circuits.py          回路 JSON を組み立てる共有ビルダー (直列/並列/混合)
  ├─ rules/dc_analysis.py 検証ルール (run(circuit) で dict のリストを返す。
  │                        unified_verifier が ValidationResult に変換する)
  ├─ schema_validation.py 入力スキーマ検証
  ├─ api.py               FastAPI Web API
  ├─ schema/              入力回路 JSON の JSON Schema
- └─ examples/            サンプル回路 JSON
+ └─ examples/            サンプル回路 JSON + ユースケース実行スクリプト
+     ├─ qa_generator_type1.py   データセット生成: 合成抵抗 QA
+     ├─ qa_generator_type2.py   データセット生成: 電源解析（逆問題）QA
+     ├─ rl_circuit_repair.py    強化学習: 検証可能報酬による回路修復
+     └─ ea_circuit_design.py    進化的アルゴリズム: 目標合成抵抗の回路設計
 ```
 
 ---
